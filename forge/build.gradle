@@ -43,6 +43,8 @@ configurations {
 }
 
 dependencies {
+    include(forgeRuntimeLibrary(annotationProcessor(implementation("com.github.LlamaLad7:MixinExtras:0.1.1"))))
+
     forge "net.minecraftforge:forge:$forge_version"
     modApi("org.valkyrienskies:valkyrienskies-118-forge:$vs2_version") { transitive = false }
 
@@ -55,6 +57,11 @@ dependencies {
     shadowCommon(project(path: ":common", configuration: "transformProductionForge")) { transitive = false }
 
     implementation "thedarkcolour:kotlinforforge:$forge_kotlin_version"
+
+    // Create compat
+    modImplementation("com.simibubi.create:create-${minecraft_version}:${create_version}:slim") { transitive = false }
+    modImplementation("com.jozufozu.flywheel:flywheel-forge-${minecraft_version}:${flywheel_version}")
+    modImplementation("com.tterrag.registrate:Registrate:${registrate_version}")
 }
 
 processResources {

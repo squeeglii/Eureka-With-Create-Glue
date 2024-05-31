@@ -35,6 +35,18 @@ dependencies {
     // Remove the next line if you don't want to depend on the API
     modApi("org.valkyrienskies:valkyrienskies-118-fabric:${rootProject.vs2_version}")
 
+    // Create compat
+    modImplementation("com.simibubi.create:create-fabric-${minecraft_version}:${create_version}+${minecraft_version}") { transitive = false }
+    modImplementation("com.jozufozu.flywheel:flywheel-fabric-${minecraft_version}:${flywheel_version}")
+    modImplementation("com.tterrag.registrate_fabric:Registrate:${registrate_version}")
+    modImplementation("io.github.fabricators_of_create:Porting-Lib:${port_lib_version}+${minecraft_version}")
+    modImplementation("me.alphamode:ForgeTags:${forge_tags_version}")
+    modImplementation("net.minecraftforge:forgeconfigapiport-fabric:${forge_config_api_port_version}")
+    modImplementation("com.jamieswhiteshirt:reach-entity-attributes:${reach_entity_attributes_version}")
+    modImplementation("dev.cafeteria:fake-player-api:${fake_player_api_version}")
+    modImplementation("io.github.tropheusj:milk-lib:${milk_lib_version}")
+
+
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive false }
 }

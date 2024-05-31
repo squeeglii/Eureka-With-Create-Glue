@@ -1,6 +1,7 @@
 package org.valkyrienskies.eureka.util
 
 import com.google.common.collect.Sets
+import com.simibubi.create.content.contraptions.components.structureMovement.glue.SuperGlueEntity
 import it.unimi.dsi.fastutil.objects.ObjectArrayList
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
@@ -157,23 +158,43 @@ object ShipAssembler {
         predicate: (BlockState) -> Boolean
     ): Boolean {
 
-        val blacklist = DenseBlockPosSet()
-        val stack = ObjectArrayList<BlockPos>()
+        //val blacklist = DenseBlockPosSet()
 
-        directions(start) { stack.push(it) }
+        val visited = DenseBlockPosSet()
+        val stack = ObjectArrayList<BlockPos>()
+        val glueCache = HashSet<SuperGlueEntity>()
+
+        directed(start) { direction, pos ->
+            if(SuperGlueEntity.isGlued(level, pos, direction, glueCache))
+                stack.push(pos)
+        }
 
         while (!stack.isEmpty) {
             val pos = stack.pop()
 
             if (predicate(level.getBlockState(pos))) {
                 blocks.add(pos.x, pos.y, pos.z)
-                directions(pos) {
-                    if (!blacklist.contains(it.x, it.y, it.z)) {
-                        blacklist.add(it.x, it.y, it.z)
-                        stack.push(it)
-                    }
+
+                directed(pos) { direction, adjPos ->
+                    //if (!blacklist.contains(adjPos.x, adjPos.y, adjPos.z)) {
+                    //    blacklist.add(adjPos.x, adjPos.y, adjPos.z)
+                    //    stack.push(adjPos)
+                    //}
+
+                    // Skip any blocks where we've already asserted that they're connected.
+                    if(visited.contains(adjPos.x, adjPos.y, adjPos.z))
+                        return@directed
+
+                    if(SuperGlueEntity.isGlued(level, pos, direction, glueCache))
+                        stack.push(adjPos)
                 }
+
+                // Successfully explored - add to visited so that we avoid this block
+                // in the future.
+                visited.add(pos.x, pos.y, pos.z)
             }
+
+
             if ((EurekaConfig.SERVER.maxShipBlocks > 0) and (blocks.size > EurekaConfig.SERVER.maxShipBlocks)) {
                 logger.info("Stopped ship assembly due too many blocks")
                 return false
@@ -195,6 +216,13 @@ object ShipAssembler {
                     }
                 }
             }
+        }
+    }
+
+    private fun directed(origin: BlockPos, lambda: (Direction, BlockPos) -> Unit) {
+        // For each side, run the passed methpd.
+        Direction.entries.forEach {
+            lambda(it, origin.relative(it))
         }
     }
 

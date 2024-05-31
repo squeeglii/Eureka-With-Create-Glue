@@ -7,17 +7,25 @@ loom {
 }
 
 dependencies {
+    annotationProcessor(implementation("com.github.LlamaLad7:MixinExtras:0.1.1"))
+
     // We depend on fabric loader here to use the fabric @Environment annotations and get the mixin dependencies
     // Do NOT use other classes from fabric loader
     modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
     // Remove the next line if you don't want to depend on the API
-//    modApi "me.shedaniel:architectury:${rootProject.architectury_version}"
+    //modApi "me.shedaniel:architectury:${rootProject.architectury_version}"
     modApi("org.valkyrienskies:valkyrienskies-118-common:${rootProject.vs2_version}")
 
     compileOnly("org.valkyrienskies.core:api:${rootProject.vs_core_version}")
     compileOnly("org.valkyrienskies.core:api-game:${rootProject.vs_core_version}")
     compileOnly("org.valkyrienskies.core:util:${rootProject.vs_core_version}")
     compileOnly("org.valkyrienskies.core:impl:${rootProject.vs_core_version}")
+
+    // Modification - Promoted Create Deps to Eureka from VS
+    modCompileOnly("com.simibubi.create:create-fabric-${minecraft_version}:${create_fabric_version}")
+            { exclude group: 'com.github.AlphaMode', module: 'fakeconfigtoml' }
+    modCompileOnly("com.jozufozu.flywheel:flywheel-fabric-${minecraft_version}:0.6.8-33")
+    modCompileOnly("io.github.fabricators_of_create:Porting-Lib:${port_lib_version}+${minecraft_version}")
 
     api "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.10"
     api "org.jetbrains.kotlin:kotlin-reflect:1.9.10"
