@@ -23,7 +23,10 @@ dependencies {
 
     // Modification - Promoted Create Deps to Eureka from VS
     modCompileOnly("com.simibubi.create:create-fabric-${minecraft_version}:${create_fabric_version}")
-            { exclude group: 'com.github.AlphaMode', module: 'fakeconfigtoml' }
+            {
+                exclude group: 'com.github.AlphaMode', module: 'fakeconfigtoml'
+                transitive = false
+            }
     modCompileOnly("com.jozufozu.flywheel:flywheel-fabric-${minecraft_version}:0.6.8-33")
     modCompileOnly("io.github.fabricators_of_create:Porting-Lib:${port_lib_version}+${minecraft_version}")
 

@@ -36,7 +36,7 @@ dependencies {
     modApi("org.valkyrienskies:valkyrienskies-118-fabric:${rootProject.vs2_version}")
 
     // Create compat
-    modImplementation("com.simibubi.create:create-fabric-${minecraft_version}:${create_version}+${minecraft_version}") { transitive = false }
+    modImplementation("com.simibubi.create:create-fabric-${minecraft_version}:${create_fabric_version}") { transitive = false }
     modImplementation("com.jozufozu.flywheel:flywheel-fabric-${minecraft_version}:${flywheel_version}")
     modImplementation("com.tterrag.registrate_fabric:Registrate:${registrate_version}")
     modImplementation("io.github.fabricators_of_create:Porting-Lib:${port_lib_version}+${minecraft_version}")

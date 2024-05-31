@@ -1,7 +1,7 @@
 package org.valkyrienskies.eureka.util
 
 import com.google.common.collect.Sets
-import com.simibubi.create.content.contraptions.components.structureMovement.glue.SuperGlueEntity
+import com.simibubi.create.content.contraptions.glue.SuperGlueEntity
 import it.unimi.dsi.fastutil.objects.ObjectArrayList
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
