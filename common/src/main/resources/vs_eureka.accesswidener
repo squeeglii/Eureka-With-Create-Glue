@@ -5,3 +5,16 @@ accessible class  net/minecraft/world/entity/EntityType$Builder
 accessible method net/minecraft/client/renderer/entity/EntityRenderers register (Lnet/minecraft/world/entity/EntityType;Lnet/minecraft/client/renderer/entity/EntityRendererProvider;)V
 accessible class  net/minecraft/client/resources/model/ModelBakery$ModelGroupKey
 accessible method net/minecraft/world/level/block/FireBlock setFlammable (Lnet/minecraft/world/level/block/Block;II)V
+
+# Eureka w/ glue -- I need joml Matricies for a rotation so I'm copying manually.
+accessible field com/mojang/math/Matrix3f m00 F
+accessible field com/mojang/math/Matrix3f m01 F
+accessible field com/mojang/math/Matrix3f m02 F
+accessible field com/mojang/math/Matrix3f m10 F
+accessible field com/mojang/math/Matrix3f m11 F
+accessible field com/mojang/math/Matrix3f m12 F
+accessible field com/mojang/math/Matrix3f m20 F
+accessible field com/mojang/math/Matrix3f m21 F
+accessible field com/mojang/math/Matrix3f m22 F
+
+

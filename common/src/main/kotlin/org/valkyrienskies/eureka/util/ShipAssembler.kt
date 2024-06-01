@@ -13,6 +13,8 @@ import org.joml.AxisAngle4d
 import org.joml.Matrix4d
 import org.joml.Vector3d
 import org.valkyrienskies.core.api.ships.ServerShip
+import org.valkyrienskies.core.api.ships.getAttachment
+import org.valkyrienskies.core.api.ships.saveAttachment
 import org.valkyrienskies.core.impl.networking.simple.sendToClient
 import org.valkyrienskies.core.util.datastructures.DenseBlockPosSet
 import org.valkyrienskies.eureka.EurekaConfig
@@ -40,13 +42,17 @@ object ShipAssembler {
         val blocks = DenseBlockPosSet()
 
         blocks.add(center.toJOML())
-        val glueEntities = bfs(level, center, blocks, predicate)
+        val optGlueEntities = bfs(level, center, blocks, predicate)
 
-        if (glueEntities.isPresent) {
+        // Glue entities is only not present if the ship is invalid.
+        // 0 glue entities == an empty set returned as present.
+        if (optGlueEntities.isPresent) {
             val ship = createNewShipWithBlocks(center, blocks, level)
-            val savedGlue = GlueEntityStateSet(glueEntities.get(), center)
+            val glueEntities = optGlueEntities.get()
+            val savedGlue = GlueEntityStateSet(glueEntities, center)
 
-            ship.saveAttachment(GlueEntityStateSet::class.java, savedGlue)
+            ship.saveAttachment<GlueEntityStateSet>(savedGlue)
+            glueEntities.forEach { it.discard() }
 
             return ship;
         } else {
@@ -154,7 +160,7 @@ object ShipAssembler {
 
         // If glue has been saved (which it should be in all cases with this modified eureka)
         // there should be a saved version of the glue.
-        ship.getAttachment(GlueEntityStateSet::class.java)?.reinstateAsSuperglue(realWorldCore, rotation)
+        ship.getAttachment<GlueEntityStateSet>()?.reinstateAsSuperglue(realWorldCore, rotation, level)
 
         // We update the blocks after they're set to prevent blocks from breaking
         for (triple in toUpdate) {
