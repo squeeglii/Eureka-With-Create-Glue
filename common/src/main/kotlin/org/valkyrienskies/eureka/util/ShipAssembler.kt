@@ -16,6 +16,7 @@ import org.valkyrienskies.core.api.ships.ServerShip
 import org.valkyrienskies.core.impl.networking.simple.sendToClient
 import org.valkyrienskies.core.util.datastructures.DenseBlockPosSet
 import org.valkyrienskies.eureka.EurekaConfig
+import org.valkyrienskies.eureka.gfss.GlueEntityStateSet
 import org.valkyrienskies.mod.common.assembly.createNewShipWithBlocks
 import org.valkyrienskies.mod.common.executeIf
 import org.valkyrienskies.mod.common.isTickingChunk
@@ -26,6 +27,8 @@ import org.valkyrienskies.mod.common.util.toJOML
 import org.valkyrienskies.mod.util.logger
 import org.valkyrienskies.mod.util.relocateBlock
 import org.valkyrienskies.mod.util.updateBlock
+import java.util.*
+import kotlin.collections.HashSet
 import kotlin.collections.set
 import kotlin.math.PI
 import kotlin.math.abs
@@ -37,9 +40,15 @@ object ShipAssembler {
         val blocks = DenseBlockPosSet()
 
         blocks.add(center.toJOML())
-        val result = bfs(level, center, blocks, predicate)
-        if (result) {
-            return createNewShipWithBlocks(center, blocks, level)
+        val glueEntities = bfs(level, center, blocks, predicate)
+
+        if (glueEntities.isPresent) {
+            val ship = createNewShipWithBlocks(center, blocks, level)
+            val savedGlue = GlueEntityStateSet(glueEntities.get(), center)
+
+            ship.saveAttachment(GlueEntityStateSet::class.java, savedGlue)
+
+            return ship;
         } else {
             return null
         }
@@ -63,7 +72,13 @@ object ShipAssembler {
         }
     }
 
-    fun unfillShip(level: ServerLevel, ship: ServerShip, direction: Direction, shipCenter: BlockPos, center: BlockPos) {
+    fun unfillShip(
+        level: ServerLevel,
+        ship: ServerShip,
+        direction: Direction,
+        fakeWorldCore: BlockPos,
+        realWorldCore: BlockPos
+    ) {
         ship.isStatic = true
 
         // ship's rotation rounded to nearest 90*
@@ -122,9 +137,11 @@ object ShipAssembler {
                             val realY = section.bottomBlockY() + y
                             val realZ = (chunkZ shl 4) + z
 
-                            val inWorldPos = shipToWorld.transformPosition(alloc0.set(realX + 0.5, realY + 0.5, realZ + 0.5)).floor()
+                            val inWorldPos =
+                                shipToWorld.transformPosition(alloc0.set(realX + 0.5, realY + 0.5, realZ + 0.5)).floor()
 
-                            val inWorldBlockPos = BlockPos(inWorldPos.x.toInt(), inWorldPos.y.toInt(), inWorldPos.z.toInt())
+                            val inWorldBlockPos =
+                                BlockPos(inWorldPos.x.toInt(), inWorldPos.y.toInt(), inWorldPos.z.toInt())
                             val inShipPos = BlockPos(realX, realY, realZ)
 
                             toUpdate.add(Triple(inShipPos, inWorldBlockPos, state))
@@ -134,6 +151,11 @@ object ShipAssembler {
                 }
             }
         }
+
+        // If glue has been saved (which it should be in all cases with this modified eureka)
+        // there should be a saved version of the glue.
+        ship.getAttachment(GlueEntityStateSet::class.java)?.reinstateAsSuperglue(realWorldCore, rotation)
+
         // We update the blocks after they're set to prevent blocks from breaking
         for (triple in toUpdate) {
             updateBlock(level, triple.first, triple.second, triple.third)
@@ -156,8 +178,7 @@ object ShipAssembler {
         start: BlockPos,
         blocks: DenseBlockPosSet,
         predicate: (BlockState) -> Boolean
-    ): Boolean {
-
+    ): Optional<Set<SuperGlueEntity>> {
         //val blacklist = DenseBlockPosSet()
 
         val visited = DenseBlockPosSet()
@@ -165,8 +186,11 @@ object ShipAssembler {
         val glueCache = HashSet<SuperGlueEntity>()
 
         directed(start) { direction, pos ->
-            if(SuperGlueEntity.isGlued(level, pos, direction, glueCache))
+            val glued = SuperGlueEntity.isGlued(level, start, direction, glueCache)
+
+            if(glued) {
                 stack.push(pos)
+            }
         }
 
         while (!stack.isEmpty) {
@@ -197,26 +221,14 @@ object ShipAssembler {
 
             if ((EurekaConfig.SERVER.maxShipBlocks > 0) and (blocks.size > EurekaConfig.SERVER.maxShipBlocks)) {
                 logger.info("Stopped ship assembly due too many blocks")
-                return false
+                return Optional.empty()
             }
         }
         if (EurekaConfig.SERVER.maxShipBlocks > 0) {
             logger.info("Assembled ship with ${blocks.size} blocks, out of ${EurekaConfig.SERVER.maxShipBlocks} allowed")
         }
-        return true
-    }
 
-    private fun directions(center: BlockPos, lambda: (BlockPos) -> Unit) {
-        if (!EurekaConfig.SERVER.diagonals) Direction.values().forEach { lambda(center.relative(it)) }
-        for (x in -1..1) {
-            for (y in -1..1) {
-                for (z in -1..1) {
-                    if (x != 0 || y != 0 || z != 0) {
-                        lambda(center.offset(x, y, z))
-                    }
-                }
-            }
-        }
+        return Optional.of(glueCache)
     }
 
     private fun directed(origin: BlockPos, lambda: (Direction, BlockPos) -> Unit) {
