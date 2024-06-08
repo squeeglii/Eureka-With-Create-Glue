@@ -160,7 +160,7 @@ object ShipAssembler {
 
         // If glue has been saved (which it should be in all cases with this modified eureka)
         // there should be a saved version of the glue.
-        ship.getAttachment<GlueEntityStateSet>()?.reinstateAsSuperglue(realWorldCore, rotation, level)
+        ship.getAttachment<GlueEntityStateSet>()?.reinstateAsSuperglue(realWorldCore, ship.transform.shipToWorldRotation, level)
 
         // We update the blocks after they're set to prevent blocks from breaking
         for (triple in toUpdate) {

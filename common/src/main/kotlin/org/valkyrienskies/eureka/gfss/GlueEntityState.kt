@@ -3,14 +3,12 @@ package org.valkyrienskies.eureka.gfss
 import com.simibubi.create.content.contraptions.glue.SuperGlueEntity
 import net.minecraft.core.BlockPos
 import net.minecraft.server.level.ServerLevel
-import net.minecraft.world.level.block.Rotation
 import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.Vec3
 import org.joml.AxisAngle4d
 import org.joml.Matrix4d
-import org.valkyrienskies.eureka.util.ShipAssembler
-import org.valkyrienskies.eureka.util.ShipAssembler.roundToNearestMultipleOf
-import org.valkyrienskies.eureka.util.ShipAssembler.snapRotation
+import org.joml.Quaterniondc
+import org.joml.Vector3d
 import kotlin.math.*
 
 class GlueEntityState(srcEntity: SuperGlueEntity, helmBlockCenter: Vec3) {
@@ -33,10 +31,10 @@ class GlueEntityState(srcEntity: SuperGlueEntity, helmBlockCenter: Vec3) {
         println("HelmCenter: $helmBlockCenter, relativeBB: $relativeBoundingBox, srcBB: $srcBox")
     }
 
-    fun spawnNew(newHelmPos: BlockPos, rotation: Rotation, level: ServerLevel) : SuperGlueEntity {
+    fun spawnNew(newHelmPos: BlockPos, rotation: Quaterniondc, level: ServerLevel) : SuperGlueEntity {
 
         val orientatedBox = rotateBoundingBox(this.relativeBoundingBox, rotation)
-        val relativeToWorldBox = orientatedBox.move(newHelmPos)
+        val relativeToWorldBox = orientatedBox.move(newHelmPos.x+0.5, newHelmPos.y+0.5, newHelmPos.z+0.5)
 
         val dimensions = "${relativeToWorldBox.xsize}x${relativeToWorldBox.ysize}x${relativeToWorldBox.zsize}"
 
@@ -57,39 +55,39 @@ class GlueEntityState(srcEntity: SuperGlueEntity, helmBlockCenter: Vec3) {
     }
 
     /** Rotates an axis aligned bounding box around the origin (0,0) */
-    private fun rotateBoundingBox(boundingBox: AABB, rotation: Rotation) : AABB {
+    private fun rotateBoundingBox(boundingBox: AABB, rotation: Quaterniondc) : AABB {
 
-        val p1: Vec3
-        val p2: Vec3
+        val transform = Matrix4d().rotate(snapRotation(AxisAngle4d(rotation)))
 
-
-
-        when (rotation) {
-            Rotation.NONE -> {
-                p1 = Vec3(boundingBox.minX, boundingBox.minY, boundingBox.minZ)
-                p2 = Vec3(boundingBox.maxX, boundingBox.maxY, boundingBox.maxZ)
-            }
-            Rotation.CLOCKWISE_90 -> {
-                p1 = Vec3(boundingBox.minZ, boundingBox.minY, boundingBox.minX)
-                p2 = Vec3(boundingBox.maxZ, boundingBox.maxY, boundingBox.maxX)
-            }
-            Rotation.CLOCKWISE_180 -> {
-                p1 = Vec3(-(boundingBox.minX), boundingBox.minY, -boundingBox.minZ)
-                p2 = Vec3(-(boundingBox.maxX), boundingBox.maxY, -boundingBox.maxZ)
-            }
-            Rotation.COUNTERCLOCKWISE_90 -> {
-                p1 = Vec3(boundingBox.minZ, boundingBox.minY, -boundingBox.minX)
-                p2 = Vec3(boundingBox.maxZ, boundingBox.maxY, -boundingBox.maxX)
-            }
-        }
-
+        val p1: Vector3d = transform.transformPosition(boundingBox.minX, boundingBox.minY, boundingBox.minZ, Vector3d())
+        val p2: Vector3d = transform.transformPosition(boundingBox.maxX, boundingBox.maxY, boundingBox.maxZ, Vector3d())
 
 
         return AABB(
-            ceil(p1.x), ceil(p1.y), ceil(p1.z),
-            ceil(p2.x), ceil(p2.y), ceil(p2.z)
+            floor(p1.x+0.5), floor(p1.y+0.5), floor(p1.z+0.5),
+            floor(p2.x+0.5), floor(p2.y+0.5), floor(p2.z+0.5)
         );
     }
+
+
+    // \/\/\/ Everything below is copied from ShipAssembler.kt \/\/\/
+
+    private fun snapRotation(direction: AxisAngle4d): AxisAngle4d {
+        val x = abs(direction.x)
+        val y = abs(direction.y)
+        val z = abs(direction.z)
+        val angle = roundToNearestMultipleOf(direction.angle, PI / 2)
+
+        return if (x > y && x > z) {
+            direction.set(angle, direction.x.sign, 0.0, 0.0)
+        } else if (y > x && y > z) {
+            direction.set(angle, 0.0, direction.y.sign, 0.0)
+        } else {
+            direction.set(angle, 0.0, 0.0, direction.z.sign)
+        }
+    }
+
+    private fun roundToNearestMultipleOf(number: Double, multiple: Double) = multiple * round(number / multiple)
 
 
 

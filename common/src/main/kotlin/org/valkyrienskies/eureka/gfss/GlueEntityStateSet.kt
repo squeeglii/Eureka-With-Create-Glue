@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.Rotation
 import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.Vec3
 import org.joml.Matrix3f
+import org.joml.Quaterniondc
 import org.valkyrienskies.core.util.toImmutableSet
 import java.util.Objects
 import java.util.stream.Collectors
@@ -28,11 +29,11 @@ class GlueEntityStateSet(states: Collection<SuperGlueEntity>, helmPos: BlockPos)
                                                           .collect(Collectors.toSet())
                                                           .toImmutableSet()
 
-    fun reinstateAsSuperglue(newHelmPos: BlockPos, rotation: Rotation, level: ServerLevel) : Set<SuperGlueEntity> {
+    fun reinstateAsSuperglue(newHelmPos: BlockPos, rotation: Quaterniondc, level: ServerLevel) : Set<SuperGlueEntity> {
 
-        val helmCenter = Vec3.atCenterOf(newHelmPos)
-        val rotMat = rotation.rotation().transformation()
-        val jomlRotMat = mojMathToJomlMatrix(rotMat)
+        //val helmCenter = Vec3.atCenterOf(newHelmPos)
+        //val rotMat = rotation.rotation().transformation()
+        //val jomlRotMat = mojMathToJomlMatrix(rotMat)
 
         return glueStates.stream()
                          .map { it.spawnNew(newHelmPos, rotation, level) }
