@@ -1,12 +1,17 @@
 package org.valkyrienskies.eureka.gfss
 
 import com.simibubi.create.content.contraptions.glue.SuperGlueEntity
+import net.minecraft.core.BlockPos
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.level.block.Rotation
 import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.Vec3
-import org.joml.Matrix3f
-import org.joml.Vector3d
+import org.joml.AxisAngle4d
+import org.joml.Matrix4d
+import org.valkyrienskies.eureka.util.ShipAssembler
+import org.valkyrienskies.eureka.util.ShipAssembler.roundToNearestMultipleOf
+import org.valkyrienskies.eureka.util.ShipAssembler.snapRotation
+import kotlin.math.*
 
 class GlueEntityState(srcEntity: SuperGlueEntity, helmBlockCenter: Vec3) {
 
@@ -28,31 +33,62 @@ class GlueEntityState(srcEntity: SuperGlueEntity, helmBlockCenter: Vec3) {
         println("HelmCenter: $helmBlockCenter, relativeBB: $relativeBoundingBox, srcBB: $srcBox")
     }
 
-    fun spawnNew(newHelmCenterPos: Vec3, rotation: Matrix3f, level: ServerLevel) : SuperGlueEntity {
+    fun spawnNew(newHelmPos: BlockPos, rotation: Rotation, level: ServerLevel) : SuperGlueEntity {
 
         val orientatedBox = rotateBoundingBox(this.relativeBoundingBox, rotation)
-        val relativeToWorldBox = orientatedBox.move(newHelmCenterPos)
+        val relativeToWorldBox = orientatedBox.move(newHelmPos)
 
-        println("NewHelmCenter: $newHelmCenterPos, relativeBB: $relativeBoundingBox, oriented: $orientatedBox, relativeToWorldBox: $relativeToWorldBox")
+        val dimensions = "${relativeToWorldBox.xsize}x${relativeToWorldBox.ysize}x${relativeToWorldBox.zsize}"
 
-        val newEnt = SuperGlueEntity(level, relativeToWorldBox)
+        println("NewHelmCenter: $newHelmPos, relativeBB: $relativeBoundingBox, oriented: $orientatedBox, relativeToWorldBox: $relativeToWorldBox, dimensions: $dimensions")
+
+        val bpMin = BlockPos(relativeToWorldBox.minX, relativeToWorldBox.minY, relativeToWorldBox.minZ)
+        val bpMax = BlockPos(relativeToWorldBox.maxX, relativeToWorldBox.maxY, relativeToWorldBox.maxZ)
+
+        val centeredBB = AABB(
+            bpMin,
+            bpMax
+        )
+
+        val newEnt = SuperGlueEntity(level, centeredBB)
         level.addFreshEntity(newEnt)
 
         return newEnt
     }
 
     /** Rotates an axis aligned bounding box around the origin (0,0) */
-    private fun rotateBoundingBox(boundingBox: AABB, rotation: Matrix3f) : AABB {
+    private fun rotateBoundingBox(boundingBox: AABB, rotation: Rotation) : AABB {
 
-        val bbMin = Vector3d(boundingBox.minX, boundingBox.minY, boundingBox.minZ)
-        val bbMax = Vector3d(boundingBox.maxX, boundingBox.maxY, boundingBox.maxZ)
+        val p1: Vec3
+        val p2: Vec3
 
-        // Rotate min & max points around origin -- mutable
-        bbMin.mul(rotation)
-        bbMax.mul(rotation)
 
-        return AABB(bbMin.x, bbMin.y, bbMax.z,
-                    bbMax.x, bbMax.y, bbMax.z);
+
+        when (rotation) {
+            Rotation.NONE -> {
+                p1 = Vec3(boundingBox.minX, boundingBox.minY, boundingBox.minZ)
+                p2 = Vec3(boundingBox.maxX, boundingBox.maxY, boundingBox.maxZ)
+            }
+            Rotation.CLOCKWISE_90 -> {
+                p1 = Vec3(boundingBox.minZ, boundingBox.minY, boundingBox.minX)
+                p2 = Vec3(boundingBox.maxZ, boundingBox.maxY, boundingBox.maxX)
+            }
+            Rotation.CLOCKWISE_180 -> {
+                p1 = Vec3(-(boundingBox.minX), boundingBox.minY, -boundingBox.minZ)
+                p2 = Vec3(-(boundingBox.maxX), boundingBox.maxY, -boundingBox.maxZ)
+            }
+            Rotation.COUNTERCLOCKWISE_90 -> {
+                p1 = Vec3(boundingBox.minZ, boundingBox.minY, -boundingBox.minX)
+                p2 = Vec3(boundingBox.maxZ, boundingBox.maxY, -boundingBox.maxX)
+            }
+        }
+
+
+
+        return AABB(
+            ceil(p1.x), ceil(p1.y), ceil(p1.z),
+            ceil(p2.x), ceil(p2.y), ceil(p2.z)
+        );
     }
 
 

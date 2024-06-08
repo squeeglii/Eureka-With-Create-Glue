@@ -35,7 +35,7 @@ class GlueEntityStateSet(states: Collection<SuperGlueEntity>, helmPos: BlockPos)
         val jomlRotMat = mojMathToJomlMatrix(rotMat)
 
         return glueStates.stream()
-                         .map { it.spawnNew(helmCenter, jomlRotMat, level) }
+                         .map { it.spawnNew(newHelmPos, rotation, level) }
                          .filter { Objects.nonNull(it) }
                          .map { it as SuperGlueEntity }
                          .collect(Collectors.toSet())
