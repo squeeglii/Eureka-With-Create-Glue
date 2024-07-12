@@ -34,7 +34,7 @@ class GlueEntityState(srcEntity: SuperGlueEntity, helmBlockCenter: Vec3) {
     fun spawnNew(newHelmPos: BlockPos, rotation: Quaterniondc, level: ServerLevel) : SuperGlueEntity {
 
         val orientatedBox = rotateBoundingBox(this.relativeBoundingBox, rotation)
-        val relativeToWorldBox = orientatedBox.move(newHelmPos.x+0.5, newHelmPos.y+0.5, newHelmPos.z+0.5)
+        val relativeToWorldBox = orientatedBox.move(newHelmPos.x.toDouble(), newHelmPos.y.toDouble(), newHelmPos.z.toDouble())
 
         val dimensions = "${relativeToWorldBox.xsize}x${relativeToWorldBox.ysize}x${relativeToWorldBox.zsize}"
 
@@ -62,10 +62,9 @@ class GlueEntityState(srcEntity: SuperGlueEntity, helmBlockCenter: Vec3) {
         val p1: Vector3d = transform.transformPosition(boundingBox.minX, boundingBox.minY, boundingBox.minZ, Vector3d())
         val p2: Vector3d = transform.transformPosition(boundingBox.maxX, boundingBox.maxY, boundingBox.maxZ, Vector3d())
 
-
         return AABB(
-            floor(p1.x+0.5), floor(p1.y+0.5), floor(p1.z+0.5),
-            floor(p2.x+0.5), floor(p2.y+0.5), floor(p2.z+0.5)
+            p1.x, p1.y, p1.z,
+            p2.x, p2.y, p2.z
         );
     }
 
